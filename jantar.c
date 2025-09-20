@@ -5,10 +5,11 @@
 #include <time.h>
 #include <signal.h>
 
-#define NUM_PHILOSOPHERS 3
-#define SIMULATION_TIME_SECONDS 8
+#define NUM_PHILOSOPHERS 5
+#define SIMULATION_TIME_SECONDS 10
+#define MAX_SEC 3 // tempo máximo (em segundos) que um filósofo pode pensar/comer
 
-// controla execucao das threads
+// variavel global que controla execucao das threads
 volatile sig_atomic_t simulation_running = 1;
 
 enum State
@@ -23,27 +24,30 @@ typedef struct
     enum State state[NUM_PHILOSOPHERS];
     pthread_mutex_t mutex;
     pthread_cond_t self[NUM_PHILOSOPHERS];
+    // metricas
     int meals_eaten[NUM_PHILOSOPHERS];
     double total_wait_time[NUM_PHILOSOPHERS];
     struct timespec time_entered_hungry[NUM_PHILOSOPHERS];
+
 } DiningTable;
 
 double get_time_in_seconds()
 {
+   // função de timestamp a partir do clock do hardware
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
-    return now.tv_sec + now.tv_nsec * 1e-9;
+    return now.tv_sec + now.tv_nsec * 1e-9; // converte nanosegundos para segundos
 }
 
-void test(DiningTable *table, int phil);
-
+// inicializa a mesa de jantar (mutexes, estados, etc)
 void dining_table_init(DiningTable *table)
 {
-    pthread_mutex_init(&table->mutex, NULL);
+    pthread_mutex_init(&table->mutex, NULL); // inicializa o mutex
     for (int i = 0; i < NUM_PHILOSOPHERS; i++)
     {
-        table->state[i] = THINKING;
-        pthread_cond_init(&table->self[i], NULL);
+        table->state[i] = THINKING; 
+        pthread_cond_init(&table->self[i], NULL); // conditional variables
+        // counters de métricas
         table->meals_eaten[i] = 0;
         table->total_wait_time[i] = 0.0;
     }
@@ -58,65 +62,77 @@ void dining_table_destroy(DiningTable *table)
     }
 }
 
-void pickup_forks(DiningTable *table, int phil)
+void test(DiningTable *table, int philosopher)
 {
-    pthread_mutex_lock(&table->mutex);
+    // vizinhos (fila circular)
+    int left = (philosopher + NUM_PHILOSOPHERS - 1) % NUM_PHILOSOPHERS;
+    int right = (philosopher + 1) % NUM_PHILOSOPHERS;
 
-    table->state[phil] = HUNGRY;
-    clock_gettime(CLOCK_MONOTONIC, &table->time_entered_hungry[phil]);
-
-    printf("🍽️  Filósofo %d quer comer\n", phil);
-
-    test(table, phil);
-
-    if (table->state[phil] != EATING)
-    {
-        pthread_cond_wait(&table->self[phil], &table->mutex);
-    }
-
-    pthread_mutex_unlock(&table->mutex);
-}
-
-void return_forks(DiningTable *table, int phil)
-{
-    pthread_mutex_lock(&table->mutex);
-
-    table->state[phil] = THINKING;
-    printf("🤔 Filósofo %d terminou de comer.\n", phil);
-
-    int left = (phil + NUM_PHILOSOPHERS - 1) % NUM_PHILOSOPHERS;
-    int right = (phil + 1) % NUM_PHILOSOPHERS;
-
-    test(table, left);
-    test(table, right);
-
-    pthread_mutex_unlock(&table->mutex);
-}
-
-void test(DiningTable *table, int phil)
-{
-    int left = (phil + NUM_PHILOSOPHERS - 1) % NUM_PHILOSOPHERS;
-    int right = (phil + 1) % NUM_PHILOSOPHERS;
-
-    if (table->state[phil] == HUNGRY &&
+    // verifica se o filósofo pode comer (vizinhos não estão comendo = garfos disponíveis)
+    if (table->state[philosopher] == HUNGRY &&
         table->state[left] != EATING &&
         table->state[right] != EATING)
     {
 
-        table->state[phil] = EATING;
+        table->state[philosopher] = EATING;
 
+        // calculo do tempo de espera
         struct timespec now;
         clock_gettime(CLOCK_MONOTONIC, &now);
-        double wait_time = (now.tv_sec - table->time_entered_hungry[phil].tv_sec) +
-                           (now.tv_nsec - table->time_entered_hungry[phil].tv_nsec) * 1e-9;
+        double wait_time = (now.tv_sec - table->time_entered_hungry[philosopher].tv_sec) +
+                           (now.tv_nsec - table->time_entered_hungry[philosopher].tv_nsec) * 1e-9;
 
-        table->total_wait_time[phil] += wait_time;
-        table->meals_eaten[phil]++;
+        table->total_wait_time[philosopher] += wait_time;
+        table->meals_eaten[philosopher]++;
 
-        printf("🍜 Filósofo %d começou a COMER! (Esperou %.2f s)\n", phil, wait_time);
+        printf("🍜 Filósofo %d começou a COMER! (Esperou %.2f s)\n", philosopher, wait_time);
 
-        pthread_cond_signal(&table->self[phil]);
+        // sinaliza o filósofo que ele pode comer
+        pthread_cond_signal(&table->self[philosopher]);
     }
+}
+
+void pickup_forks(DiningTable *table, int philosopher)
+{
+    // tenta pegar os garfos (entrar na seção crítica)
+    pthread_mutex_lock(&table->mutex);
+    
+    table->state[philosopher] = HUNGRY;
+    clock_gettime(CLOCK_MONOTONIC, &table->time_entered_hungry[philosopher]);
+
+    printf("🍽️  Filósofo %d quer comer\n", philosopher);
+
+    // chama a função para ver se pode comer
+    test(table, philosopher);
+
+    // se não conseguiu comer, espera o sinal
+    if (table->state[philosopher] != EATING)
+    {
+        pthread_cond_wait(&table->self[philosopher], &table->mutex);
+    }
+
+    // sai da seção crítica
+    pthread_mutex_unlock(&table->mutex);
+}
+
+void return_forks(DiningTable *table, int philosopher)
+{
+    // tenta devolver os garfos (entrar na seção crítica)
+    pthread_mutex_lock(&table->mutex);
+
+    table->state[philosopher] = THINKING;
+    printf("🤔 Filósofo %d terminou de comer.\n", philosopher);
+
+    // confere vizinhos
+    int left = (philosopher + NUM_PHILOSOPHERS - 1) % NUM_PHILOSOPHERS;
+    int right = (philosopher + 1) % NUM_PHILOSOPHERS;
+
+    // vê se algum vizinho pode comer agora
+    test(table, left);
+    test(table, right);
+
+    // sai da seção crítica
+    pthread_mutex_unlock(&table->mutex);
 }
 
 typedef struct
@@ -127,6 +143,7 @@ typedef struct
 
 void *philosopher_lifecycle(void *args)
 {
+    // extrai argumentos e os atribui
     philosopher_args *p_args = (philosopher_args *)args;
     int id = p_args->id;
     DiningTable *table = p_args->table;
@@ -134,7 +151,8 @@ void *philosopher_lifecycle(void *args)
     //  verifica flag global
     while (simulation_running)
     {
-        int think_time = (rand() % 3) + 1;
+        // pensa por um tempo aleatório entre 1 e MAX_SEC segundos
+        int think_time = (rand() % MAX_SEC) + 1;
         sleep(think_time);
 
         if (!simulation_running)
@@ -142,7 +160,7 @@ void *philosopher_lifecycle(void *args)
 
         pickup_forks(table, id);
 
-        int eat_time = (rand() % 3) + 1;
+        int eat_time = (rand() % MAX_SEC) + 1;
         sleep(eat_time);
 
         return_forks(table, id);
@@ -167,6 +185,7 @@ void *monitor_lifecycle(void *arg)
         printf("|----------|-----------|--------------------|--------------|\n");
         for (int i = 0; i < NUM_PHILOSOPHERS; i++)
         {
+            // calcula espera média
             double avg_wait = (table->meals_eaten[i] == 0) ? 0 : table->total_wait_time[i] / table->meals_eaten[i];
             printf("|    %d     |    %3d    |     %8.2f s     |   %6.2f s   |\n",
                    i, table->meals_eaten[i], table->total_wait_time[i], avg_wait);
@@ -181,9 +200,11 @@ int main()
 {
     srand(time(NULL));
 
+    // criacao e inicializacao da mesa de jantar
     DiningTable table;
     dining_table_init(&table);
 
+    // cria as threads dos filósofos
     pthread_t philosophers[NUM_PHILOSOPHERS];
     philosopher_args args[NUM_PHILOSOPHERS];
     pthread_t monitor_thread;
@@ -191,6 +212,7 @@ int main()
     printf("Iniciando o Jantar dos Filósofos por %d segundos...\n", SIMULATION_TIME_SECONDS);
     printf("---------------------------------------------------\n");
 
+    // inicia as threads dos filósofos atribuindo IDs e a mesa
     for (int i = 0; i < NUM_PHILOSOPHERS; i++)
     {
         args[i].id = i;
