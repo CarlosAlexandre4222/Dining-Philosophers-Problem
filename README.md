@@ -79,7 +79,7 @@ Total de refeições servidas: 13
 # Ubuntu/Debian
 sudo apt update
 sudo apt install build-essential gcc
-
+```
 
 ### Bibliotecas Necessárias
 - `pthread` (POSIX Threads)
@@ -160,7 +160,7 @@ gcc -o dining_philosophers dining_philosophers.c -lpthread -lrt
 
 ## 👥 Divisão de Responsabilidades
 
-### Túlio Neiva
+### 🧠 Túlio Neiva
 
 #### Funções Implementadas:
 - `dining_table_init()` - Inicialização do sistema de sincronização
@@ -169,8 +169,7 @@ gcc -o dining_philosophers dining_philosophers.c -lpthread -lrt
 - `return_forks()` - Lógica de liberação de recursos  
 - Sistema de métricas e timestamps
 
-
-### Carlos Alexandre  
+### 🎮 Carlos Alexandre  
 
 #### Funções Implementadas:
 - `philosopher_lifecycle()` - Ciclo de vida de cada filósofo
@@ -192,5 +191,4 @@ gcc -o dining_philosophers dining_philosophers.c -lpthread -lrt
 <div align="center">
   <strong>🍽️ Dining Philosophers Problem - Implementação Completa</strong><br>
   <em>Sistemas Operacionais • POSIX Threads • Sincronização Avançada</em>
-
 </div>
