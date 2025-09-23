@@ -160,7 +160,7 @@ gcc -o dining_philosophers dining_philosophers.c -lpthread -lrt
 
 ## 👥 Divisão de Responsabilidades
 
-### 🧠 Túlio Neiva
+### Túlio Neiva
 
 #### Funções Implementadas:
 - `dining_table_init()` - Inicialização do sistema de sincronização
@@ -170,7 +170,7 @@ gcc -o dining_philosophers dining_philosophers.c -lpthread -lrt
 - Sistema de métricas e timestamps
 
 
-### 🎮 Carlos Alexandre  
+### Carlos Alexandre  
 
 #### Funções Implementadas:
 - `philosopher_lifecycle()` - Ciclo de vida de cada filósofo
@@ -192,4 +192,5 @@ gcc -o dining_philosophers dining_philosophers.c -lpthread -lrt
 <div align="center">
   <strong>🍽️ Dining Philosophers Problem - Implementação Completa</strong><br>
   <em>Sistemas Operacionais • POSIX Threads • Sincronização Avançada</em>
+
 </div>
