@@ -148,12 +148,12 @@ Você pode ajustar os parâmetros no início do arquivo `dining_philosophers.c`:
 ### Casos de Teste
 ```bash
 # Teste rápido (5 segundos)
-sed -i 's/#define SIMULATION_TIME_SECONDS 10/#define SIMULATION_TIME_SECONDS 5/' dining_philosophers.c
+sed -i 's/#define SIMULATION_TIME_SECONDS 5/' dining_philosophers.c
 gcc -o dining_philosophers dining_philosophers.c -lpthread -lrt
 ./dining_philosophers
 
 # Teste com mais filósofos
-sed -i 's/#define NUM_PHILOSOPHERS 5/#define NUM_PHILOSOPHERS 7/' dining_philosophers.c
+sed -i 's/#define NUM_PHILOSOPHERS 7/' dining_philosophers.c
 gcc -o dining_philosophers dining_philosophers.c -lpthread -lrt
 ./dining_philosophers
 ```
@@ -192,3 +192,4 @@ gcc -o dining_philosophers dining_philosophers.c -lpthread -lrt
   <strong>🍽️ Dining Philosophers Problem - Implementação Completa</strong><br>
   <em>Sistemas Operacionais • POSIX Threads • Sincronização Avançada</em>
 </div>
+
