@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
 
 COPY . .
 
-RUN gcc -o jantar jantar.c -lpthread -lrt
+RUN gcc -o dining_philosophers dining_philosophers.c -lpthread -lrt
 
-CMD ["./jantar"]
+
+CMD ["./dining_philosophers"]
