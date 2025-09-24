@@ -42,11 +42,9 @@ jobs:
           username: ${{ secrets.LIGHTSAIL_USER }}
           key: ${{ secrets.LIGHTSAIL_KEY }}
           script: |
-            # Criar diretório se não existir
             mkdir -p ~/dining-philosophers
             cd ~/dining-philosophers
 
-            # Criar docker-compose.yml no servidor (sem a seção 'environment')
             cat > docker-compose.yml << 'EOF'
             version: '3.8'
             services:
@@ -56,7 +54,6 @@ jobs:
                 restart: unless-stopped
             EOF
 
-            # Deploy
             docker-compose down 2>/dev/null || true
             docker rmi ${{ secrets.DOCKER_USERNAME }}/dining-philosophers:latest 2>/dev/null || true
             docker pull ${{ secrets.DOCKER_USERNAME }}/dining-philosophers:latest
